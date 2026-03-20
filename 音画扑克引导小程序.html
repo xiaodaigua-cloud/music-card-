@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎵 音画扑克 · 期末作业引导</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "PingFang SC", "Helvetica Neue", sans-serif;
+      background: linear-gradient(145deg, #f8f4eb 0%, #f0e8d8 40%, #e8dcc8 100%);
+      min-height: 100vh;
+      color: #2c2416;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    /* Floating music notes */
+    .note {
+      position: fixed;
+      font-size: 24px;
+      opacity: 0;
+      animation: floatUp 8s infinite ease-in-out;
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.6; }
+      100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+    }
+
+    /* Golden light beams */
+    .light-beam {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      width: 300px;
+      height: 100%;
+      background: linear-gradient(180deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0) 70%);
+      transform: translateX(-50%) rotate(-15deg);
+      pointer-events: none;
+      z-index: 0;
+      animation: beamPulse 6s infinite ease-in-out;
+    }
+    .light-beam:nth-child(2) { transform: translateX(-50%) rotate(15deg); animation-delay: -3s; }
+    .light-beam:nth-child(3) { transform: translateX(-70%) rotate(-8deg); animation-delay: -1.5s; width: 200px; }
+    @keyframes beamPulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.6; }
+    }
+
+    /* Sparkles */
+    .sparkle {
+      position: fixed;
+      width: 4px;
+      height: 4px;
+      background: gold;
+      border-radius: 50%;
+      box-shadow: 0 0 10px 2px rgba(212,175,55,0.8);
+      animation: sparkle 3s infinite;
+      pointer-events: none;
+      z-index: 1;
+    }
+    @keyframes sparkle {
+      0%, 100% { opacity: 0; transform: scale(0); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 40px 20px 30px;
+    }
+    .header .emoji { font-size: 56px; display: block; margin-bottom: 12px; animation: headerBounce 2s infinite; }
+    @keyframes headerBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #8b7355, #d4af37, #8b7355);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 3px;
+    }
+    .header p {
+      margin-top: 8px;
+      color: #7a6a55;
+      font-size: 14px;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      background: rgba(139,115,85,0.15);
+      border-radius: 20px;
+      height: 8px;
+      margin: 0 0 30px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #d4af37, #f5d67a, #d4af37);
+      border-radius: 20px;
+      transition: width 0.5s ease;
+      box-shadow: 0 0 10px rgba(212,175,55,0.5);
+    }
+    .progress-label {
+      text-align: right;
+      font-size: 12px;
+      color: #7a6a55;
+      margin-bottom: 6px;
+    }
+
+    /* Step cards */
+    .step-card {
+      background: rgba(255,253,248,0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(212,175,55,0.25);
+      border-radius: 20px;
+      padding: 28px;
+      margin-bottom: 16px;
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(139,115,85,0.1);
+    }
+    .step-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(212,175,55,0.5), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .step-card:hover::before { opacity: 1; }
+
+    .step-card.locked {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .step-card.active {
+      border-color: #d4af37;
+      background: rgba(255,253,248,0.95);
+      box-shadow: 0 8px 32px rgba(212,175,55,0.2), 0 0 0 1px rgba(212,175,55,0.3);
+      transform: translateY(-2px);
+    }
+    .step-card.done {
+      border-color: #7a9e7a;
+      background: rgba(250,252,250,0.9);
+      opacity: 0.85;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .step-num {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px;
+      flex-shrink: 0;
+      background: linear-gradient(145deg, #d4af37, #b8962e);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(212,175,55,0.4);
+    }
+    .step-card.active .step-num { background: linear-gradient(145deg, #d4af37, #b8962e); }
+    .step-card.done .step-num { background: linear-gradient(145deg, #7a9e7a, #5d7a5d); }
+    .step-card.locked .step-num { background: linear-gradient(145deg, #c8bfb0, #a89f8f); }
+
+    .step-title { font-size: 18px; font-weight: 600; color: #2c2416; }
+    .step-subtitle { font-size: 13px; color: #7a6a55; margin-top: 2px; }
+
+    .step-body { font-size: 14px; line-height: 1.8; color: #4a3f2f; }
+    .step-body ul { padding-left: 18px; margin: 10px 0; }
+    .step-body li { margin-bottom: 6px; }
+    .step-body .highlight {
+      background: linear-gradient(135deg, rgba(212,175,55,0.12), rgba(245,214,122,0.15));
+      border-left: 3px solid #d4af37;
+      padding: 12px 16px;
+      border-radius: 0 10px 10px 0;
+      margin: 12px 0;
+      font-size: 13px;
+      color: #3d3222;
+    }
+    .step-body .tool-list {
+      display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0;
+    }
+    .tool-tag {
+      background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08));
+      border: 1px solid rgba(212,175,55,0.3);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: #5d4e30;
+      transition: all 0.2s;
+    }
+    .tool-tag:hover { background: rgba(212,175,55,0.25); transform: translateY(-1px); }
+    .tool-tag a { color: #8b6914; text-decoration: none; font-weight: 500; }
+    .tool-tag a:hover { text-decoration: underline; }
+
+    /* Checklist */
+    .checklist { margin: 16px 0; }
+    .check-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(139,115,85,0.1);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+    }
+    .check-item:last-child { border-bottom: none; }
+    .check-item:hover { background: rgba(212,175,55,0.05); border-radius: 8px; margin: 0 -8px; padding: 10px 8px; }
+    .check-box {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(139,115,85,0.4);
+      border-radius: 6px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      margin-top: 1px;
+    }
+    .check-item.checked .check-box {
+      background: linear-gradient(145deg, #7a9e7a, #5d7a5d);
+      border-color: #5d7a5d;
+    }
+    .check-item.checked .check-box::after {
+      content: "✓";
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .check-item.checked .check-text {
+      text-decoration: line-through;
+      color: #9a8a7a;
+    }
+    .check-text { font-size: 14px; color: #4a3f2f; line-height: 1.5; }
+
+    /* Input fields */
+    .input-group { margin: 12px 0; }
+    .input-group label { display: block; font-size: 13px; color: #7a6a55; margin-bottom: 6px; font-weight: 500; }
+    .input-group input, .input-group textarea, .input-group select {
+      width: 100%;
+      background: rgba(255,253,248,0.8);
+      border: 1px solid rgba(139,115,85,0.25);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #2c2416;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .input-group input:focus, .input-group textarea:focus, .input-group select:focus {
+      border-color: #d4af37;
+      box-shadow: 0 0 0 3px rgba(212,175,55,0.15);
+    }
+    .input-group input::placeholder, .input-group textarea::placeholder { color: #a89f8f; }
+    .input-group textarea { resize: vertical; min-height: 80px; }
+    .input-group select option { background: #f8f4eb; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: inherit;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s;
+    }
+    .btn:hover::before { left: 100%; }
+    .btn-primary {
+      background: linear-gradient(145deg, #d4af37, #b8962e);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(212,175,55,0.4);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(212,175,55,0.5); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-success {
+      background: linear-gradient(145deg, #7a9e7a, #5d7a5d);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(93,122,93,0.4);
+    }
+    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(93,122,93,0.5); }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid rgba(139,115,85,0.4);
+      color: #5d4e30;
+    }
+    .btn-outline:hover { background: rgba(212,175,55,0.1); border-color: #d4af37; }
+
+    .btn-row { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+    /* Done badge */
+    .done-badge {
+      position: absolute; top: 16px; right: 16px;
+      background: linear-gradient(145deg, #7a9e7a, #5d7a5d);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 8px rgba(93,122,93,0.3);
+    }
+
+    /* Completion screen */
+    .completion {
+      text-align: center;
+      padding: 50px 20px;
+      display: none;
+    }
+    .completion .big-emoji { font-size: 72px; display: block; margin-bottom: 20px; animation: celebrateBounce 1s infinite; }
+    @keyframes celebrateBounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    .completion h2 { font-size: 26px; color: #2c2416; margin-bottom: 12px; }
+    .completion p { color: #7a6a55; font-size: 15px; line-height: 1.7; }
+    .completion .summary-box {
+      background: rgba(255,253,248,0.9);
+      border: 1px solid rgba(212,175,55,0.25);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 24px 0;
+      text-align: left;
+      box-shadow: 0 4px 20px rgba(139,115,85,0.1);
+    }
+    .completion .summary-box h3 { color: #b8962e; margin-bottom: 12px; font-size: 15px; }
+    .completion .summary-box p { font-size: 13px; color: #4a3f2f; margin-bottom: 8px; }
+    .completion .summary-box strong { color: #2c2416; }
+
+    /* Prompt template box */
+    .prompt-box {
+      background: linear-gradient(135deg, rgba(212,175,55,0.08), rgba(245,214,122,0.05));
+      border: 1px solid rgba(212,175,55,0.25);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 13px;
+      color: #4a3f2f;
+      line-height: 1.7;
+      margin: 12px 0;
+      white-space: pre-wrap;
+      position: relative;
+    }
+    .copy-btn {
+      position: absolute; top: 10px; right: 10px;
+      background: rgba(212,175,55,0.2);
+      border: none; border-radius: 8px;
+      color: #5d4e30; font-size: 12px;
+      padding: 5px 12px; cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover { background: rgba(212,175,55,0.35); }
+
+    /* Responsive */
+    @media (max-width: 500px) {
+      .header h1 { font-size: 22px; }
+      .step-card { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Floating music notes -->
+  <div class="note" style="left:5%;animation-delay:0s;">♪</div>
+  <div class="note" style="left:15%;animation-delay:1s;">♫</div>
+  <div class="note" style="left:25%;animation-delay:2s;">♬</div>
+  <div class="note" style="left:35%;animation-delay:3s;">♪</div>
+  <div class="note" style="left:45%;animation-delay:4s;">♫</div>
+  <div class="note" style="left:55%;animation-delay:5s;">♬</div>
+  <div class="note" style="left:65%;animation-delay:1.5s;">♪</div>
+  <div class="note" style="left:75%;animation-delay:2.5s;">♫</div>
+  <div class="note" style="left:85%;animation-delay:3.5s;">♬</div>
+  <div class="note" style="left:95%;animation-delay:4.5s;">♪</div>
+
+  <!-- Light beams -->
+  <div class="light-beam"></div>
+  <div class="light-beam"></div>
+  <div class="light-beam"></div>
+
+  <!-- Sparkles -->
+  <div class="sparkle" style="top:20%;left:10%;animation-delay:0s;"></div>
+  <div class="sparkle" style="top:40%;left:80%;animation-delay:1s;"></div>
+  <div class="sparkle" style="top:60%;left:20%;animation-delay:2s;"></div>
+  <div class="sparkle" style="top:80%;left:70%;animation-delay:0.5s;"></div>
+  <div class="sparkle" style="top:30%;left:90%;animation-delay:1.5s;"></div>
+  <div class="sparkle" style="top:70%;left:5%;animation-delay:2.5s;"></div>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <span class="emoji">🎴</span>
+    <h1>音画扑克 · 期末作业引导</h1>
+    <p>《音乐鉴赏》期末作业 · 一步一步完成你的专属音乐卡片</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-label" id="progressLabel">进度：0 / 4 步完成</div>
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+  </div>
+
+  <!-- ===== STEP 1 ===== -->
+  <div class="step-card active" id="step1">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div>
+        <div class="step-title">🎨 第一步：生成卡片正面图像</div>
+        <div class="step-subtitle">用 AI 生成你与作曲家/偶像的专属场景图</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>选择一个 AI 画图工具，把你（或你的卡通形象）与你喜欢的作曲家/偶像放在同一个场景中。</p>
+
+      <div class="highlight">
+        🖼️ 图像要求：风格与音乐时期呼应（如巴洛克用古典灯光暗红色调，电子风用霓虹赛博元素），导出高清 PNG/JPEG（建议 2000px）
+      </div>
+
+      <p style="margin-bottom:8px"><strong>推荐工具：</strong></p>
+      <div class="tool-list">
+        <span class="tool-tag"><a href="https://www.doubao.com" target="_blank">豆包</a></span>
+        <span class="tool-tag"><a href="https://www.deepseek.com" target="_blank">DeepSeek</a></span>
+        <span class="tool-tag"><a href="https://jimeng.jianying.com" target="_blank">即梦</a></span>
+      </div>
+
+      <p style="margin:12px 0 8px"><strong>图像提示词模板（复制后粘贴到 AI 工具）：</strong></p>
+      <div class="prompt-box" id="imgPromptBox">一幅[风格]风格的插画，画面中[你的形象描述]与[作曲家/偶像名字]在[场景，如：古典演奏厅/霓虹赛博咖啡厅/梦幻星空舞台]中相遇交流，背景色调为[颜色风格，如：暗红金色/霓虹蓝紫/柔和暖黄]，高清，细节丰富，适合制作卡片正面<button class="copy-btn" onclick="copyText('imgPromptBox')">复制</button></div>
+
+      <p style="margin-bottom:8px"><strong>完成清单：</strong></p>
+      <div class="checklist" id="checklist1">
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <div class="check-text">已选定作曲家/偶像和音乐时期</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <div class="check-text">已用 AI 工具生成满意的图像</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <div class="check-text">已导出高清 PNG/JPEG（≥2000px）</div>
+        </div>
+      </div>
+
+      <!-- 填写信息 -->
+      <div class="input-group">
+        <label>你选择的作曲家/偶像</label>
+        <input type="text" id="composer" placeholder="例如：肖邦、周杰伦、贝多芬…" />
+      </div>
+      <div class="input-group">
+        <label>音乐时期</label>
+        <select id="period">
+          <option value="">请选择</option>
+          <option>巴洛克（Baroque）</option>
+          <option>古典（Classical）</option>
+          <option>浪漫派（Romantic）</option>
+          <option>印象派（Impressionism）</option>
+          <option>20世纪/当代</option>
+          <option>流行（Pop）</option>
+          <option>电子（Electronic）</option>
+          <option>其他</option>
+        </select>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="completeStep(1)" id="btn1">完成第一步，进入第二步 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== STEP 2 ===== -->
+  <div class="step-card locked" id="step2">
+    <div class="done-badge" id="done2" style="display:none">✓ 已完成</div>
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div>
+        <div class="step-title">🎵 第二步：AI 创作音乐</div>
+        <div class="step-subtitle">用 AI 音乐工具生成你的专属曲目</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>根据你选择的时期和风格，用 AI 音乐工具生成一首专属曲目。</p>
+
+      <div class="highlight">
+        💡 先用豆包帮你整理音乐要素，再把提示词投喂给音乐生成器
+      </div>
+
+      <p style="margin-bottom:8px"><strong>推荐音乐生成工具：</strong></p>
+      <div class="tool-list">
+        <span class="tool-tag"><a href="https://suno.com" target="_blank">Suno（每天50积分）</a></span>
+        <span class="tool-tag"><a href="https://www.udio.com" target="_blank">Udio（每天10积分）</a></span>
+        <span class="tool-tag"><a href="https://tianyin.music.163.com" target="_blank">网易天音（每天3次）</a></span>
+        <span class="tool-tag"><a href="https://www.tiangong.cn/skymusic" target="_blank">天工SkyMusic（每天5次）</a></span>
+        <span class="tool-tag"><a href="https://www.haimian.com" target="_blank">海绵音乐（限时免费）</a></span>
+        <span class="tool-tag"><a href="https://www.doubao.com" target="_blank">豆包（限时免费）</a></span>
+      </div>
+
+      <p style="margin:12px 0 8px"><strong>填写你的音乐要素（用于生成提示词）：</strong></p>
+
+      <div class="input-group">
+        <label>节拍/拍号 + 速度</label>
+        <input type="text" id="beat" placeholder="例如：4/4拍，行板，BPM=80" />
+      </div>
+      <div class="input-group">
+        <label>主要乐器</label>
+        <input type="text" id="instruments" placeholder="例如：钢琴主旋律，弦乐伴奏，轻鼓点" />
+      </div>
+      <div class="input-group">
+        <label>风格/情感关键词（3-6个）</label>
+        <input type="text" id="mood" placeholder="例如：抒情、梦幻、庄严、戏剧" />
+      </div>
+      <div class="input-group">
+        <label>歌词（可选，没有就留空）</label>
+        <textarea id="lyrics" placeholder="填写歌词片段，或留空让 AI 生成…"></textarea>
+      </div>
+
+      <p style="margin:12px 0 6px"><strong>生成的音乐提示词（自动生成，可复制修改）：</strong></p>
+      <div class="prompt-box" id="musicPromptBox" style="min-height:60px">填写上方信息后点击「生成提示词」<button class="copy-btn" onclick="copyText('musicPromptBox')">复制</button></div>
+      <button class="btn btn-outline" onclick="generateMusicPrompt()" style="margin-bottom:12px">✨ 生成音乐提示词</button>
+
+      <p style="margin-bottom:8px"><strong>完成清单：</strong></p>
+      <div class="checklist">
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <div class="check-text">已填写音乐要素（时期、节拍、乐器、情感）</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <div class="check-text">已在音乐生成器中生成并试听满意</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <div class="check-text">已获取音乐的可访问链接（分享链接或云盘链接）</div>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>音乐链接（粘贴在这里备用）</label>
+        <input type="text" id="musicLink" placeholder="https://…" />
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="completeStep(2)" id="btn2">完成第二步，进入第三步 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== STEP 3 ===== -->
+  <div class="step-card locked" id="step3">
+    <div class="done-badge" id="done3" style="display:none">✓ 已完成</div>
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div>
+        <div class="step-title">📱 第三步：制作二维码 + 合成正面</div>
+        <div class="step-subtitle">把音乐链接变成二维码，嵌入卡片正面</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>把第二步的音乐链接生成二维码，再用图片编辑软件合成到正面图像上。</p>
+
+      <div class="highlight">
+        📌 二维码建议放在右下角或舞台灯光下，留白或浅色边框保证可扫码
+      </div>
+
+      <p style="margin-bottom:8px"><strong>推荐二维码生成工具：</strong></p>
+      <div class="tool-list">
+        <span class="tool-tag"><a href="https://cli.im" target="_blank">草料二维码</a></span>
+        <span class="tool-tag"><a href="https://qr.io" target="_blank">QR.io</a></span>
+        <span class="tool-tag"><a href="https://www.qrcode-monkey.com" target="_blank">QRCode Monkey</a></span>
+      </div>
+
+      <p style="margin-bottom:8px"><strong>推荐图片编辑工具：</strong></p>
+      <div class="tool-list">
+        <span class="tool-tag"><a href="https://www.canva.com" target="_blank">Canva</a></span>
+        <span class="tool-tag"><a href="https://www.photopea.com" target="_blank">Photopea（免费PS）</a></span>
+        <span class="tool-tag">手机图像编辑器</span>
+      </div>
+
+      <p style="margin-bottom:8px"><strong>完成清单：</strong></p>
+      <div class="checklist">
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <div class="check-text">已用音乐链接生成二维码</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <div class="check-text">已将二维码嵌入正面图像（对比度足够，可扫码）</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <div class="check-text">已导出正面图像，命名格式：学号_姓名_卡片_front.png</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="completeStep(3)" id="btn3">完成第三步，进入第四步 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== STEP 4 ===== -->
+  <div class="step-card locked" id="step4">
+    <div class="done-badge" id="done4" style="display:none">✓ 已完成</div>
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <div>
+        <div class="step-title">🃏 第四步：制作卡片反面 + 提交</div>
+        <div class="step-subtitle">完成信息版反面，整理文件并提交</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>制作卡片反面（信息版），然后把正面图像 + 反面信息页 + 音乐链接一起提交。</p>
+
+      <div class="highlight">
+        📝 反面命名格式：学号_姓名_card_back.pdf（保存高清，模糊可用美图秀秀/Wink 还原）
+      </div>
+
+      <p style="margin-bottom:8px"><strong>反面需要包含的内容（参考排版顺序）：</strong></p>
+      <ul>
+        <li>🏷️ <strong>标题</strong>：卡片名（例如："梦中的肖邦对话"）</li>
+        <li>👤 <strong>作者</strong>：姓名 + 学号【加分项】</li>
+        <li>🎼 <strong>参考作曲家/偶像</strong>：姓名 + 所属时期</li>
+        <li>🎵 <strong>音乐要素</strong>：时期、节拍、乐器、力度、风格情感词</li>
+        <li>✍️ <strong>创作说明</strong>（30-80字）：为何选此时期/主题，想表达什么</li>
+        <li>🚩 <strong>时空传音</strong>：5年后想成为什么样的人</li>
+        <li>💬 <strong>歌词</strong>（若有）</li>
+        <li>✨ <strong>个人座右铭/签名</strong>（可选）</li>
+      </ul>
+
+      <div class="input-group" style="margin-top:16px">
+        <label>卡片标题</label>
+        <input type="text" id="cardTitle" placeholder="例如：梦中的肖邦对话" />
+      </div>
+      <div class="input-group">
+        <label>创作说明（30-80字）</label>
+        <textarea id="description" placeholder="为何选此时期/主题，想表达什么…"></textarea>
+      </div>
+      <div class="input-group">
+        <label>时空传音：5年后想成为什么样的人？</label>
+        <textarea id="future" placeholder="写下你对未来的期许…"></textarea>
+      </div>
+
+      <p style="margin-bottom:8px"><strong>完成清单：</strong></p>
+      <div class="checklist">
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <div class="check-text">已制作卡片反面，包含所有必要信息</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <div class="check-text">反面已导出为高清 PDF，命名：学号_姓名_card_back.pdf</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <div class="check-text">正面图像（带二维码）已准备好</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <div class="check-text">音乐链接已准备好</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck(this)">
+          <div class="check-box"></div>
+          <div class="check-text">已在提交表格中上传所有文件并填写音乐链接</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-success" onclick="completeStep(4)" id="btn4">🎉 全部完成，提交作业！</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Completion -->
+  <div class="completion" id="completion">
+    <span class="big-emoji">🎴✨</span>
+    <h2>恭喜！你的音画扑克完成了！</h2>
+    <p>你已经完成了所有步骤，一张专属的音乐卡片诞生了。</p>
+
+    <div class="summary-box" id="summaryBox">
+      <h3>📋 你的作品信息</h3>
+    </div>
+
+    <p style="margin-top:16px; color:#b8962e">记得去提交表格上传文件哦！🚀</p>
+    <div class="btn-row" style="justify-content:center; margin-top:24px">
+      <button class="btn btn-outline" onclick="resetAll()">↩ 重新开始</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let currentStep = 1;
+  const totalSteps = 4;
+
+  function toggleCheck(el) {
+    el.classList.toggle('checked');
+  }
+
+  function copyText(id) {
+    const el = document.getElementById(id);
+    const text = el.innerText.replace('复制', '').trim();
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = el.querySelector('.copy-btn');
+      btn.textContent = '已复制 ✓';
+      setTimeout(() => btn.textContent = '复制', 2000);
+    });
+  }
+
+  function generateMusicPrompt() {
+    const composer = document.getElementById('composer')?.value || '作曲家';
+    const period = document.getElementById('period')?.value || '浪漫派';
+    const beat = document.getElementById('beat')?.value || '4/4拍，行板';
+    const instruments = document.getElementById('instruments')?.value || '钢琴，弦乐';
+    const mood = document.getElementById('mood')?.value || '抒情，梦幻';
+    const lyrics = document.getElementById('lyrics')?.value;
+
+    let prompt = `风格：${period}，致敬${composer}\n`;
+    prompt += `节拍：${beat}\n`;
+    prompt += `乐器：${instruments}\n`;
+    prompt += `结构：引子（钢琴低音铺陈，弱音）→ 呈示段（主题A抒情，主题B对比）→ 展开段（转调变化）→ 再现段（加强力度）\n`;
+    prompt += `力度：pp → mf → f → mf\n`;
+    prompt += `情感：${mood}\n`;
+    if (lyrics) prompt += `歌词：${lyrics}`;
+
+    const box = document.getElementById('musicPromptBox');
+    box.innerHTML = prompt + '<button class="copy-btn" onclick="copyText(\'musicPromptBox\')">复制</button>';
+  }
+
+  function completeStep(step) {
+    const card = document.getElementById('step' + step);
+    card.classList.remove('active');
+    card.classList.add('done');
+
+    const badge = document.getElementById('done' + step);
+    if (badge) badge.style.display = 'block';
+
+    if (step < totalSteps) {
+      const next = document.getElementById('step' + (step + 1));
+      next.classList.remove('locked');
+      next.classList.add('active');
+      next.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      showCompletion();
+    }
+
+    currentStep = step + 1;
+    updateProgress(step);
+  }
+
+  function updateProgress(completedStep) {
+    const pct = (completedStep / totalSteps) * 100;
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent =
+      `进度：${completedStep} / ${totalSteps} 步完成`;
+  }
+
+  function showCompletion() {
+    document.getElementById('completion').style.display = 'block';
+    document.getElementById('completion').scrollIntoView({ behavior: 'smooth' });
+
+    const composer = document.getElementById('composer')?.value || '（未填写）';
+    const period = document.getElementById('period')?.value || '（未填写）';
+    const cardTitle = document.getElementById('cardTitle')?.value || '（未填写）';
+    const musicLink = document.getElementById('musicLink')?.value || '（未填写）';
+
+    const box = document.getElementById('summaryBox');
+    box.innerHTML = `
+      <h3>📋 你的作品信息</h3>
+      <p>🎼 作曲家/偶像：<strong>${composer}</strong></p>
+      <p>🕰️ 音乐时期：<strong>${period}</strong></p>
+      <p>🃏 卡片标题：<strong>${cardTitle}</strong></p>
+      <p>🔗 音乐链接：<strong>${musicLink}</strong></p>
+    `;
+
+    updateProgress(4);
+  }
+
+  function resetAll() {
+    location.reload();
+  }
+</script>
+</body>
+</html>
